@@ -1,6 +1,82 @@
-type ExampleEntity @entity {
-  id: ID!
-  count: BigInt!
-  ethToReward: BigInt! # uint256
-  usdtToReward: BigInt! # uint256
+enum TransactionType {
+  STAKE
+  UNSTAKE
+  UNSTAKE_ALL
+  CLAIM_REWARD
 }
+
+type ContractConfigEntity @entity {
+  id: ID!
+  changer: Bytes
+  decimal: BigInt
+  ethRewardedNotWithdraw: BigInt
+  feeUnit: BigInt
+  lastDis: BigInt
+  minAmountToStake: BigInt
+  nextDistribution: BigInt
+  numEthToReward: BigInt
+  numUsdtToReward: BigInt
+  numberOfStakeHolder: BigInt
+  owner: String
+  paused: Boolean
+  periodTime: String
+  token: String
+  totalStaked: BigInt
+  usdt: String
+  usdtRewardNotWithdraw: BigInt
+  createdAt: String
+  updateAt: String
+}
+
+type StakeEntity @entity {
+  id: ID!
+  hash: String
+  user: UserEntity
+  stakeId: BigInt
+  txHash: String
+  stakeTime: BigInt
+  isUnstaked: Boolean
+  amount: BigInt
+  w: BigInt
+  ethReward: BigDecimal
+  usdtReward: BigDecimal
+  createdAt: String
+  updateAt: String
+}
+
+type UnStakeEntity @entity {
+  id: ID!
+  user: UserEntity
+  stakeId: BigInt
+  txHash: String
+  stakeTime: BigInt
+  amount: BigInt
+  ethReward: BigDecimal
+  usdtReward: BigDecimal
+  unstakedAt: String
+}
+
+type UserEntity @entity {
+  id: ID!
+  user: Bytes
+  stakes: [StakeEntity!]
+}
+
+type TransactionEntity @entity {
+  id: ID!
+  stakeId: BigInt
+  type: TransactionType
+  purchaser: UserEntity
+  beneficiary: UserEntity
+  amount: BigInt
+  ethReward: BigInt
+  usdtReward: BigInt
+  token: String
+  name: String
+  symbol: String
+  transactionHash: String
+  createdAt: String
+  updateAt: String
+}
+
+
