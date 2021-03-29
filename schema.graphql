@@ -24,8 +24,8 @@ type ContractConfigEntity @entity {
   totalStaked: BigInt
   usdt: String
   usdtRewardNotWithdraw: BigInt
-  createdAt: String
-  updateAt: String
+  createdAt: BigInt
+  updateAt: BigInt
 }
 
 type StakeEntity @entity {
@@ -40,8 +40,8 @@ type StakeEntity @entity {
   w: BigInt
   ethReward: BigDecimal
   usdtReward: BigDecimal
-  createdAt: String
-  updateAt: String
+  createdAt: BigInt
+  updateAt: BigInt
 }
 
 type UserEntity @entity {
@@ -63,8 +63,15 @@ type TransactionEntity @entity {
   name: String
   symbol: String
   transactionHash: String
-  createdAt: String
-  updateAt: String
+  createdAt: BigInt
+  updateAt: BigInt
+}
+
+type Total @entity  {
+  id: ID!
+  totalW: BigDecimal
+  createdAt: BigInt
+  updateAt: BigInt
 }
 
 

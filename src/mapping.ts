@@ -13,7 +13,7 @@ import {
   UserWithdrawedReward
 } from "../generated/Contract/Contract";
 import { ContractConfigEntity, StakeEntity, UserEntity } from "../generated/schema";
-import { caculateW, getTimeNow, saveTransaction } from "./helper";
+import { caculateW, randomString, saveTransaction } from "./helper";
 
 export function handleAdminDistributeReward(
   event: AdminDistributeReward
@@ -33,7 +33,7 @@ export function handleStakBankConfigurationChanged(
   event: StakBankConfigurationChanged
 ): void {
   let id = event.transaction.hash.toHexString();
-  let currentTime = getTimeNow();
+  let currentTime = event.block.timestamp;
   let config = ContractConfigEntity.load(id);
   if (config === null) {
     config = new ContractConfigEntity(id);
@@ -57,23 +57,25 @@ export function handleUnpause(event: Unpause): void {
 
 export function handleUserStaked(event: UserStaked): void {
   let userID = event.params.user.toHex();
+  let transactionID = event.transaction.hash.toHex();
   let user = UserEntity.load(userID);
-  let currentTime = getTimeNow();
+  let currentTime = event.block.timestamp;
   if (user === null) {
     user = new UserEntity(event.params.user.toHex());
     user.user = event.params.user;
     user.stakes = [];
   }
-  let id = event.params.requestId.toHex() + "_" + userID;
+  let id = event.params.requestId.toHex() + "_" + transactionID;
   // let id = event.transaction.hash.toHexString();
   // Stake
   let stake = StakeEntity.load(id);
 
   if (stake === null) {
     stake = new StakeEntity(id);
-    stake.createdAt = currentTime;
-    stake.stakeTime = event.params.timestamp;
   }
+
+  stake.createdAt = currentTime;
+  stake.stakeTime = event.params.timestamp;
   stake.stakeId = event.params.requestId;
   stake.amount = event.params.amount;
   stake.updateAt = currentTime;
@@ -87,27 +89,27 @@ export function handleUserStaked(event: UserStaked): void {
   log.info('Stake with ID: {}', [id]);
 
   // Transaction
-  let transactionID = event.transaction.from.toHex();
-  saveTransaction(transactionID, userID, currentTime, event.params.requestId, "STAKE");
+  saveTransaction(transactionID, userID, event.block.timestamp, event.params.requestId, "STAKE");
 }
 
 export function handleUserUnstakedAll(event: UserUnstakedAll): void {
   let userID = event.params.user.toHex();
   let user = UserEntity.load(userID);
-  let currentTime = getTimeNow();
+  let currentTime = event.block.timestamp;
   if (user !== null) {
     let stakes = user.stakes;
     stakes.forEach(stakeId => {
       let stake = StakeEntity.load(stakeId);
       if (stake !== null) {
         stake.isUnstaked = true;
-        stake.updateAt = currentTime;
+        stake.updateAt = event.block.timestamp;
         stake.save();
       }
       else {
         log.error("The stake with ID: {} not found", [stakeId]);
       }
     });
+
     user.stakes = [];
     user.save();
     let transactionID = event.transaction.hash.toHexString();
@@ -118,9 +120,15 @@ export function handleUserUnstakedAll(event: UserUnstakedAll): void {
 
 export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
   let userID = event.params.user.toHex();
-  let stakeId = event.params.requestId.toHex() + "_" + userID;
+  let transactionID = event.transaction.hash.toHexString();
+
+  // find stakeId
   let user = UserEntity.load(userID);
-  let currentTime = getTimeNow();
+  let stakes = user.stakes;
+  let stakeId = stakes.filter(e => e.startsWith(event.params.requestId.toHex()))[0];
+
+  let currentTime = event.block.timestamp;
+
   let stake = StakeEntity.load(stakeId);
   if (stake !== null) {
     stake.isUnstaked = true;
@@ -128,10 +136,7 @@ export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
     stake.save();
     log.info('Stake with ID: {} just got unstaked', [stakeId]);
 
-    let userID = event.params.user.toHex()
-    let transactionID = event.transaction.hash.toHexString();
     saveTransaction(transactionID, userID, currentTime, stake.stakeId, "UNSTAKE");
-    let stakes = user.stakes;
     let index = stakes.indexOf(stakeId);
     stakes = stakes.splice(index, 1);
     user.stakes = stakes;
