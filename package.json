@@ -4,10 +4,10 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ Sotatek-TienHa/test",
-    "create-local": "graph create --node http://localhost:8020/ Sotatek-TienHa/test",
-    "remove-local": "graph remove --node http://localhost:8020/ Sotatek-TienHa/test",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 Sotatek-TienHa/test"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ tienthegainz/stakkbank-demo",
+    "create-local": "graph create --node http://localhost:8020/ tienthegainz/stakkbank-demo",
+    "remove-local": "graph remove --node http://localhost:8020/ tienthegainz/stakkbank-demo",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 tienthegainz/stakkbank-demo"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.20.0",

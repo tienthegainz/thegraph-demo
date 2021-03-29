@@ -100,11 +100,9 @@ export function handleUserUnstakedAll(event: UserUnstakedAll): void {
     stakes.forEach(stakeId => {
       let stake = StakeEntity.load(stakeId);
       if (stake !== null) {
-        // stake.isUnstaked = true;
-        // stake.updateAt = currentTime;
-        // stake.save();
-
-        store.remove('StakeEntity', stakeId);
+        stake.isUnstaked = true;
+        stake.updateAt = currentTime;
+        stake.save();
       }
       else {
         log.error("The stake with ID: {} not found", [stakeId]);
@@ -125,10 +123,9 @@ export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
   let currentTime = getTimeNow();
   let stake = StakeEntity.load(stakeId);
   if (stake !== null) {
-    // stake.isUnstaked = true;
-    // stake.updateAt = currentTime;
-    // stake.save();
-    store.remove('StakeEntity', stakeId);
+    stake.isUnstaked = true;
+    stake.updateAt = currentTime;
+    stake.save();
     log.info('Stake with ID: {} just got unstaked', [stakeId]);
 
     let userID = event.params.user.toHex()

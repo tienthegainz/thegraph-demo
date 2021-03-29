@@ -44,18 +44,6 @@ type StakeEntity @entity {
   updateAt: String
 }
 
-type UnStakeEntity @entity {
-  id: ID!
-  user: UserEntity
-  stakeId: BigInt
-  txHash: String
-  stakeTime: BigInt
-  amount: BigInt
-  ethReward: BigDecimal
-  usdtReward: BigDecimal
-  unstakedAt: String
-}
-
 type UserEntity @entity {
   id: ID!
   user: Bytes
