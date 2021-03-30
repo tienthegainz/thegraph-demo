@@ -13,7 +13,7 @@ import {
 } from "@graphprotocol/graph-ts";
 import { Contract } from "../generated/Contract/Contract";
 
-export function saveTransaction(transactionID: string, userID: string, timestamp: BigInt | null, stakeId: BigInt | null, type: string): void {
+export function saveTransaction(transactionID: string, userID: string, timestamp: BigInt | null, stakeId: BigInt | null, type: string, amount: BigInt | null): void {
 
   let transaction: TransactionEntity = new TransactionEntity(transactionID);
   transaction.createdAt = timestamp;
@@ -24,6 +24,7 @@ export function saveTransaction(transactionID: string, userID: string, timestamp
   transaction.token = '0x7ee16180c44857b79d1f28b3af757ac8fa0c0089';
   transaction.name = 'Jig Stack';
   transaction.symbol = 'JST ';
+  transaction.amount = amount;
   // assign with enum value
   transaction.type = type;
 

@@ -30,7 +30,6 @@ type ContractConfigEntity @entity {
 
 type StakeEntity @entity {
   id: ID!
-  hash: String
   user: UserEntity
   stakeId: BigInt
   txHash: String

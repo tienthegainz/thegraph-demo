@@ -65,7 +65,7 @@ export function handleUserStaked(event: UserStaked): void {
     user.user = event.params.user;
     user.stakes = [];
   }
-  let id = event.params.requestId.toHex() + "_" + transactionID;
+  let id = transactionID;
   // let id = event.transaction.hash.toHexString();
   // Stake
   let stake = StakeEntity.load(id);
@@ -74,13 +74,19 @@ export function handleUserStaked(event: UserStaked): void {
     stake = new StakeEntity(id);
   }
 
+  let timestamp = event.params.timestamp;
+  let stakeID = event.params.requestId;
+  let amount = event.params.amount;
+
   stake.createdAt = currentTime;
-  stake.stakeTime = event.params.timestamp;
-  stake.stakeId = event.params.requestId;
-  stake.amount = event.params.amount;
+  stake.isUnstaked = false;
+  stake.stakeTime = timestamp;
+  stake.stakeId = stakeID;
+  stake.amount = amount;
+  stake.txHash = transactionID;
   stake.updateAt = currentTime;
   stake.user = userID;
-  stake.w = caculateW(event.address, event.params.amount);
+  stake.w = caculateW(event.address, amount);
   let stakes = user.stakes;
   stakes.push(stake.id);
   user.stakes = stakes;
@@ -89,7 +95,7 @@ export function handleUserStaked(event: UserStaked): void {
   log.info('Stake with ID: {}', [id]);
 
   // Transaction
-  saveTransaction(transactionID, userID, event.block.timestamp, event.params.requestId, "STAKE");
+  saveTransaction(transactionID, userID, timestamp, stakeID, "STAKE", amount);
 }
 
 export function handleUserUnstakedAll(event: UserUnstakedAll): void {
@@ -98,53 +104,51 @@ export function handleUserUnstakedAll(event: UserUnstakedAll): void {
   let currentTime = event.block.timestamp;
   if (user !== null) {
     let stakes = user.stakes;
-    stakes.forEach(stakeId => {
+    for (let index = 0; index < stakes.length; index++) {
+      let stakeId = stakes.pop();
       let stake = StakeEntity.load(stakeId);
       if (stake !== null) {
         stake.isUnstaked = true;
-        stake.updateAt = event.block.timestamp;
+        stake.updateAt = currentTime;
         stake.save();
       }
       else {
         log.error("The stake with ID: {} not found", [stakeId]);
       }
-    });
-
+    }
     user.stakes = [];
     user.save();
     let transactionID = event.transaction.hash.toHexString();
-    saveTransaction(transactionID, userID, currentTime, null, "UNSTAKE_ALL");
-  }
+    saveTransaction(transactionID, userID, currentTime, null, "UNSTAKE_ALL", null);
+  };
 
 }
 
 export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
   let userID = event.params.user.toHex();
-  let transactionID = event.transaction.hash.toHexString();
 
   // find stakeId
   let user = UserEntity.load(userID);
   let stakes = user.stakes;
-  let stakeId = stakes.filter(e => e.startsWith(event.params.requestId.toHex()))[0];
+  let requestId = event.params.requestId;
 
-  let currentTime = event.block.timestamp;
-
-  let stake = StakeEntity.load(stakeId);
-  if (stake !== null) {
-    stake.isUnstaked = true;
-    stake.updateAt = currentTime;
-    stake.save();
-    log.info('Stake with ID: {} just got unstaked', [stakeId]);
-
-    saveTransaction(transactionID, userID, currentTime, stake.stakeId, "UNSTAKE");
-    let index = stakes.indexOf(stakeId);
-    stakes = stakes.splice(index, 1);
-    user.stakes = stakes;
-    user.save();
-  }
-  else {
-    log.error("The stake with ID: {} not found", [stakeId]);
-  }
+  for (let index = 0; index < stakes.length; index++) {
+    let stakeId = stakes.pop();
+    let stake = StakeEntity.load(stakeId);
+    if (stake !== null && stake.stakeId === requestId) {
+      stake.isUnstaked = true;
+      stake.updateAt = event.block.timestamp;
+      stake.save();
+      log.info('Stake with ID: {} just got unstaked', [stakeId]);
+      let userID = event.params.user.toHex();
+      saveTransaction(event.transaction.hash.toHexString(), userID, event.block.timestamp, stake.stakeId, "UNSTAKE", stake.amount);
+      let stakes_ = user.stakes;
+      stakes_ = stakes_.splice(index, 1);
+      user.stakes = stakes_;
+      user.save();
+      break;
+    }
+  };
 }
 
 export function handleUserWithdrawedReward(event: UserWithdrawedReward): void {
