@@ -71,7 +71,7 @@ export function handleUserStaked(event: UserStaked): void {
   let stakeID = event.params.requestId;
   let amount = event.params.amount;
 
-  let id = stakeID.toString()  + "_" + timestamp.toString();
+  let id = stakeID.toString() + "_" + transactionID;
   // let id = event.transaction.hash.toHexString();
   // Stake
   let stake = new StakeEntity(id);
@@ -107,7 +107,7 @@ export function handleUserUnstakedAll(event: UserUnstakedAll): void {
 
   if (user != null) {
     let stakesToPop = user.stakes;
-    const length = stakesToPop.length;    
+    const length = stakesToPop.length;
     for (let index = 0; index < length; index++) {
       let stakeId = stakesToPop.pop();
       let stake = StakeEntity.load(stakeId);
@@ -116,7 +116,7 @@ export function handleUserUnstakedAll(event: UserUnstakedAll): void {
         stake.isUnstaked = true;
         stake.updateAt = currentTime;
         stake.save();
-      }      
+      }
       else {
         logSaved('Caydang', 'UnstakeAll gonewrong', 'UnstakeAll');
       }
@@ -141,9 +141,9 @@ export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
   let stakesToPop = user.stakes; //array of stake's trxHash
 
   //debug
-  logSaved(userID + "_" + txHash + "_REQ" ,"Id_to_remove: " + requestId.toString(), "REQUEST");
+  logSaved(userID + "_" + txHash + "_REQ", "Id_to_remove: " + requestId.toString(), "REQUEST");
 
-  let lastIndex = stakesToPop.length - 1;  
+  let lastIndex = stakesToPop.length - 1;
 
   for (lastIndex; lastIndex >= 0; lastIndex--) {
     //The stakeId get poped is now a TrxHash
@@ -152,13 +152,13 @@ export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
 
     //This stakeId being compared is the requestId
     //The acctual id
-    if(stake == null){
-      logSaved(userID +  "_" + txHash + "_BEING", 'Null in the processing' , "BEING");
+    if (stake == null) {
+      logSaved(userID + "_" + txHash + "_BEING", 'Null in the processing', "BEING");
     }
 
     if (stake !== null && stake.stakeId == requestId) {
       //debug
-      logSaved(userID +  "_" + txHash + "_BEING", 'being_unstaked_id: ' + stake.stakeId.toString() , "BEING");
+      logSaved(userID + "_" + txHash + "_BEING", 'being_unstaked_id: ' + stake.stakeId.toString(), "BEING");
       //Update the being-unstaked stake
       stake.isUnstaked = true;
       stake.updateAt = event.block.timestamp;
@@ -166,10 +166,10 @@ export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
 
       //Create new transaction
       saveTransaction(txHash, userID, event.block.timestamp, stake.stakeId, "UNSTAKE", stake.amount);
-      
+
       //Update stakes of users
       let stakes_ = user.stakes;
-      stakes_ = stakes_.splice(lastIndex, 1);
+      stakes_.splice(lastIndex, 1);
       user.stakes = stakes_;
       user.save();
 
@@ -177,10 +177,10 @@ export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
     }
   }
   //debug
-  logSaved(userID +  "_" + txHash + "_AFTER",  user.stakes.toString() , "AFTER");      
+  logSaved(userID + "_" + txHash + "_AFTER", user.stakes.toString(), "AFTER");
 }
 
-function logSaved(id : string, message : string, func : string):void{
+function logSaved(id: string, message: string, func: string): void {
   const loged = new Log(id);
   loged.message = message;
   loged.func = func;
