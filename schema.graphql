@@ -73,4 +73,9 @@ type Total @entity  {
   updateAt: BigInt
 }
 
+type Log @entity {
+  id: ID!
+  func: String
+  message: String
+}
 
