@@ -190,6 +190,7 @@ function logSaved(id: string, message: string, func: string): void {
 
 export function handleUserWithdrawedReward(event: UserWithdrawedReward): void {
   let id = event.transaction.hash.toHexString();
+  let currentTime = event.block.timestamp;
 
   let userID = event.params.user.toHex();
   let user = UserEntity.load(userID);
@@ -209,6 +210,7 @@ export function handleUserWithdrawedReward(event: UserWithdrawedReward): void {
   transaction.symbol = 'JST';
   // assign with enum value
   transaction.type = "CLAIM_REWARD";
+  transaction.createdAt = currentTime;
 
   transaction.save();
   log.info('Transaction saved with ID: {}', [id]);
