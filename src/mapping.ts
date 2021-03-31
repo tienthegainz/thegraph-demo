@@ -12,7 +12,7 @@ import {
   UserUnstakedWithId,
   UserWithdrawedReward
 } from "../generated/Contract/Contract";
-import { ContractConfigEntity, StakeEntity, UserEntity, Log } from "../generated/schema";
+import { ContractConfigEntity, StakeEntity, UserEntity, Log, TransactionEntity } from "../generated/schema";
 import { caculateW, randomString, saveTransaction } from "./helper";
 
 export function handleAdminDistributeReward(
@@ -72,7 +72,6 @@ export function handleUserStaked(event: UserStaked): void {
   let amount = event.params.amount;
 
   let id = stakeID.toString() + "_" + transactionID;
-  // let id = event.transaction.hash.toHexString();
   // Stake
   let stake = new StakeEntity(id);
 
@@ -135,6 +134,7 @@ export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
   const userID = event.params.user.toHex();
   const requestId = event.params.requestId;
   const txHash = event.transaction.hash.toHexString();
+  const currentTime = event.block.timestamp;
 
   // find stakeId
   let user = UserEntity.load(userID);
@@ -161,11 +161,11 @@ export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
       logSaved(userID + "_" + txHash + "_BEING", 'being_unstaked_id: ' + stake.stakeId.toString(), "BEING");
       //Update the being-unstaked stake
       stake.isUnstaked = true;
-      stake.updateAt = event.block.timestamp;
+      stake.updateAt = currentTime;
       stake.save();
 
       //Create new transaction
-      saveTransaction(txHash, userID, event.block.timestamp, stake.stakeId, "UNSTAKE", stake.amount);
+      saveTransaction(txHash, userID, currentTime, stake.stakeId, "UNSTAKE", stake.amount);
 
       //Update stakes of users
       let stakes_ = user.stakes;
@@ -189,28 +189,27 @@ function logSaved(id: string, message: string, func: string): void {
 
 
 export function handleUserWithdrawedReward(event: UserWithdrawedReward): void {
-  // let id = event.transaction.hash.toHexString();
+  let id = event.transaction.hash.toHexString();
 
-  // let transaction = TransactionEntity.load(id);
-  // if (transaction !== null) {
-  //   transaction = new TransactionEntity(id);
-  // }
-  // transaction.ethReward = event.params.ethReward;
-  // transaction.usdtReward = event.params.usdtReward;
-  // let userID = event.params.user.toHex();
-  // let user = UserEntity.load(userID);
-  // if (user === null) {
-  //   user = new UserEntity(event.params.user.toHex());
-  //   user.save();
-  // }
-  // transaction.beneficiary = userID;
-  // transaction.purchaser = userID;
-  // transaction.token = '0x7ee16180c44857b79d1f28b3af757ac8fa0c0089';
-  // transaction.name = 'Jig Stack';
-  // transaction.symbol = 'JST';
-  // // assign with enum value
-  // transaction.type = "CLAIM_REWARD";
+  let userID = event.params.user.toHex();
+  let user = UserEntity.load(userID);
+  if (user === null) {
+    user = new UserEntity(event.params.user.toHex());
+    user.save();
+  }
 
-  // transaction.save();
-  // log.info('Transaction saved with ID: {}', [id]);
+  let transaction = new TransactionEntity(id);
+
+  transaction.ethReward = event.params.ethReward;
+  transaction.usdtReward = event.params.usdtReward;
+  transaction.beneficiary = userID;
+  transaction.purchaser = userID;
+  transaction.token = '0x7ee16180c44857b79d1f28b3af757ac8fa0c0089';
+  transaction.name = 'Jig Stack';
+  transaction.symbol = 'JST';
+  // assign with enum value
+  transaction.type = "CLAIM_REWARD";
+
+  transaction.save();
+  log.info('Transaction saved with ID: {}', [id]);
 }

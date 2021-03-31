@@ -32,11 +32,18 @@ export function saveTransaction(transactionID: string, userID: string, timestamp
   log.info('Transaction {} with ID: {}', [type, transactionID]);
 }
 
-export function caculateW(address: Address, amount: BigInt): BigInt {
+export function caculateW(address: Address, amount: BigInt): string {
+  log.info('Smart contract address: {}', [address.toHexString()]);
   let contract: Contract = Contract.bind(address);
-  let second_time: BigInt = contract.countdownToNextDistribution();
-  let day_time: BigInt = BigInt.fromI32(second_time.toI32() / (60 * 60 * 60 * 24));
-  let w: BigInt = day_time.times(amount);
+  let second_time: number = contract.countdownToNextDistribution().toI32();
+  let day_time_f64: number = second_time / (60 * 60 * 24);
+  let w: string = day_time_f64.toString();
+  // 5184000 = 60 * 60 * 60 * 24
+  // let day_time: BigDecimal = BigInt.from(day_time_i32).toBigDecimal();
+  // let w: BigDecimal = day_time.times(amount.toBigDecimal());
+  // log.info('Smart contract address: {} - countDown in day: {} -- {} - w: {}',
+  //   [address.toHexString(), day_time_i32.toString(), day_time.toString(), w.toString()]
+  // );
   return w;
 }
 

@@ -36,7 +36,7 @@ type StakeEntity @entity {
   stakeTime: BigInt
   isUnstaked: Boolean
   amount: BigInt
-  w: BigInt
+  w: String
   ethReward: BigDecimal
   usdtReward: BigDecimal
   createdAt: BigInt
