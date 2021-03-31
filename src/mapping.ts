@@ -12,7 +12,7 @@ import {
   UserUnstakedWithId,
   UserWithdrawedReward
 } from "../generated/Contract/Contract";
-import { ContractConfigEntity, StakeEntity, UserEntity } from "../generated/schema";
+import { ContractConfigEntity, StakeEntity, UserEntity, Log } from "../generated/schema";
 import { caculateW, randomString, saveTransaction } from "./helper";
 
 export function handleAdminDistributeReward(
@@ -58,6 +58,7 @@ export function handleUnpause(event: Unpause): void {
 export function handleUserStaked(event: UserStaked): void {
   let userID = event.params.user.toHex();
   let transactionID = event.transaction.hash.toHex();
+
   let user = UserEntity.load(userID);
   let currentTime = event.block.timestamp;
   if (user === null) {
@@ -65,18 +66,15 @@ export function handleUserStaked(event: UserStaked): void {
     user.user = event.params.user;
     user.stakes = [];
   }
-  let id = transactionID;
-  // let id = event.transaction.hash.toHexString();
-  // Stake
-  let stake = StakeEntity.load(id);
-
-  if (stake === null) {
-    stake = new StakeEntity(id);
-  }
 
   let timestamp = event.params.timestamp;
   let stakeID = event.params.requestId;
   let amount = event.params.amount;
+
+  let id = stakeID.toString()  + "_" + timestamp.toString();
+  // let id = event.transaction.hash.toHexString();
+  // Stake
+  let stake = new StakeEntity(id);
 
   stake.createdAt = currentTime;
   stake.isUnstaked = false;
@@ -87,10 +85,12 @@ export function handleUserStaked(event: UserStaked): void {
   stake.updateAt = currentTime;
   stake.user = userID;
   stake.w = caculateW(event.address, amount);
+
   let stakes = user.stakes;
-  stakes.push(stake.id);
+  stakes.push(id);
   user.stakes = stakes;
   user.save();
+
   stake.save();
   log.info('Stake with ID: {}', [id]);
 
@@ -99,25 +99,32 @@ export function handleUserStaked(event: UserStaked): void {
 }
 
 export function handleUserUnstakedAll(event: UserUnstakedAll): void {
+  //find user
   let userID = event.params.user.toHex();
   let user = UserEntity.load(userID);
-  let currentTime = event.block.timestamp;
-  if (user !== null) {
-    let stakes = user.stakes;
-    for (let index = 0; index < stakes.length; index++) {
-      let stakeId = stakes.pop();
+
+  const currentTime = event.block.timestamp;
+
+  if (user != null) {
+    let stakesToPop = user.stakes;
+    const length = stakesToPop.length;    
+    for (let index = 0; index < length; index++) {
+      let stakeId = stakesToPop.pop();
       let stake = StakeEntity.load(stakeId);
-      if (stake !== null) {
+
+      if (stake != null) {
         stake.isUnstaked = true;
         stake.updateAt = currentTime;
         stake.save();
-      }
+      }      
       else {
-        log.error("The stake with ID: {} not found", [stakeId]);
+        logSaved('Caydang', 'UnstakeAll gonewrong', 'UnstakeAll');
       }
     }
+    //Update user's stakes
     user.stakes = [];
     user.save();
+
     let transactionID = event.transaction.hash.toHexString();
     saveTransaction(transactionID, userID, currentTime, null, "UNSTAKE_ALL", null);
   };
@@ -125,31 +132,61 @@ export function handleUserUnstakedAll(event: UserUnstakedAll): void {
 }
 
 export function handleUserUnstakedWithId(event: UserUnstakedWithId): void {
-  let userID = event.params.user.toHex();
+  const userID = event.params.user.toHex();
+  const requestId = event.params.requestId;
+  const txHash = event.transaction.hash.toHexString();
 
   // find stakeId
   let user = UserEntity.load(userID);
-  let stakes = user.stakes;
-  let requestId = event.params.requestId;
+  let stakesToPop = user.stakes; //array of stake's trxHash
 
-  for (let index = 0; index < stakes.length; index++) {
-    let stakeId = stakes.pop();
+  //debug
+  logSaved(userID + "_" + txHash + "_REQ" ,"Id_to_remove: " + requestId.toString(), "REQUEST");
+
+  let lastIndex = stakesToPop.length - 1;  
+
+  for (lastIndex; lastIndex >= 0; lastIndex--) {
+    //The stakeId get poped is now a TrxHash
+    let stakeId = stakesToPop.pop();
     let stake = StakeEntity.load(stakeId);
-    if (stake !== null && stake.stakeId === requestId) {
+
+    //This stakeId being compared is the requestId
+    //The acctual id
+    if(stake == null){
+      logSaved(userID +  "_" + txHash + "_BEING", 'Null in the processing' , "BEING");
+    }
+
+    if (stake !== null && stake.stakeId == requestId) {
+      //debug
+      logSaved(userID +  "_" + txHash + "_BEING", 'being_unstaked_id: ' + stake.stakeId.toString() , "BEING");
+      //Update the being-unstaked stake
       stake.isUnstaked = true;
       stake.updateAt = event.block.timestamp;
       stake.save();
-      log.info('Stake with ID: {} just got unstaked', [stakeId]);
-      let userID = event.params.user.toHex();
-      saveTransaction(event.transaction.hash.toHexString(), userID, event.block.timestamp, stake.stakeId, "UNSTAKE", stake.amount);
+
+      //Create new transaction
+      saveTransaction(txHash, userID, event.block.timestamp, stake.stakeId, "UNSTAKE", stake.amount);
+      
+      //Update stakes of users
       let stakes_ = user.stakes;
-      stakes_ = stakes_.splice(index, 1);
+      stakes_ = stakes_.splice(lastIndex, 1);
       user.stakes = stakes_;
       user.save();
+
       break;
     }
-  };
+  }
+  //debug
+  logSaved(userID +  "_" + txHash + "_AFTER",  user.stakes.toString() , "AFTER");      
 }
+
+function logSaved(id : string, message : string, func : string):void{
+  const loged = new Log(id);
+  loged.message = message;
+  loged.func = func;
+  loged.save();
+}
+
 
 export function handleUserWithdrawedReward(event: UserWithdrawedReward): void {
   // let id = event.transaction.hash.toHexString();

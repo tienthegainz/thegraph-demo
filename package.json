@@ -1,17 +1,17 @@
 {
-  "name": "test",
+  "name": "stakbank",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ tienthegainz/stakkbank-demo",
-    "create-local": "graph create --node http://localhost:8020/ tienthegainz/stakkbank-demo",
-    "remove-local": "graph remove --node http://localhost:8020/ tienthegainz/stakkbank-demo",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 tienthegainz/stakkbank-demo"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ Sotatek-HoangNguyen2/subgraph_of_aTien",
+    "create-local": "graph create --node http://localhost:8020/ Sotatek-HoangNguyen2/stakbank",
+    "remove-local": "graph remove --node http://localhost:8020/ Sotatek-HoangNguyen2/stakbank",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 Sotatek-HoangNguyen2/stakbank",
+    "lazy" : "yarn remove-local & yarn codegen & yarn create-local & yarn deploy-local"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.20.0",
-    "@graphprotocol/graph-ts": "0.20.0",
-    "chalk": "^4.1.0"
+    "@graphprotocol/graph-ts": "0.20.0"
   }
 }
